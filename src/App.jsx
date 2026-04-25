@@ -960,8 +960,8 @@ export default function App() {
     : "sticky top-0 z-50 border-b border-orange-100 bg-white/95 backdrop-blur";
 
   const navClass = isDark
-    ? "hidden gap-6 text-sm font-medium text-slate-200 md:flex"
-    : "hidden gap-6 text-sm font-medium text-slate-700 md:flex";
+    ? "hidden gap-6 text-sm font-medium text-slate-200 md:flex md:flex-nowrap md:shrink-0"
+    : "hidden gap-6 text-sm font-medium text-slate-700 md:flex md:flex-nowrap md:shrink-0";
 
   const statCardClass = isDark
     ? "rounded-2xl border border-white/10 bg-white/5 p-5 shadow-sm"
@@ -1000,15 +1000,15 @@ export default function App() {
           </div>
 
           <nav className={navClass}>
-            <a href="#accueil" className="transition hover:text-green-500">{t.nav[0]}</a>
-            <a href="#apropos" className="transition hover:text-green-500">{t.nav[1]}</a>
-            <a href="#activites" className="transition hover:text-green-500">{t.nav[2]}</a>
-            <a href="#galerie" className="transition hover:text-green-500">{t.nav[3]}</a>
-            <a href="#don" className="transition hover:text-green-500">{t.nav[4]}</a>
-            <a href="#contact" className="transition hover:text-green-500">{t.nav[5]}</a>
+            <a href="#accueil" className="whitespace-nowrap transition hover:text-green-500">{t.nav[0]}</a>
+            <a href="#apropos" className="whitespace-nowrap transition hover:text-green-500">{t.nav[1]}</a>
+            <a href="#activites" className="whitespace-nowrap transition hover:text-green-500">{t.nav[2]}</a>
+            <a href="#galerie" className="whitespace-nowrap transition hover:text-green-500">{t.nav[3]}</a>
+            <a href="#don" className="whitespace-nowrap transition hover:text-green-500">{t.nav[4]}</a>
+            <a href="#contact" className="whitespace-nowrap transition hover:text-green-500">{t.nav[5]}</a>
           </nav>
 
-            <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
+            <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3 md:flex-nowrap md:shrink-0">
             <button
               type="button"
               onClick={() => setLang((prev) => (prev === "fr" ? "ar" : "fr"))}
@@ -1036,7 +1036,7 @@ export default function App() {
 
             <a
               href="#don"
-              className="inline-flex rounded-xl bg-orange-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-orange-200 transition hover:-translate-y-0.5 hover:bg-orange-600 sm:px-5 sm:py-3"
+              className="inline-flex whitespace-nowrap rounded-xl bg-orange-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-orange-200 transition hover:-translate-y-0.5 hover:bg-orange-600 sm:px-5 sm:py-3"
             >
               {t.donateBtn}
             </a>
@@ -1073,14 +1073,14 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => setShowManager((value) => !value)}
-                  className="hidden md:inline-flex rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-lg transition hover:bg-slate-50 sm:px-5 sm:py-3"
+                  className="hidden md:inline-flex whitespace-nowrap rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-lg transition hover:bg-slate-50 sm:px-5 sm:py-3"
                 >
                   {showManager ? t.manageHideLabel : t.manageLabel}
                 </button>
                 <button
                   type="button"
                   onClick={logout}
-                  className="hidden md:inline-flex rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-lg transition hover:bg-slate-50 sm:px-5 sm:py-3"
+                  className="hidden md:inline-flex whitespace-nowrap rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-lg transition hover:bg-slate-50 sm:px-5 sm:py-3"
                 >
                   {t.logoutLabel}
                 </button>
