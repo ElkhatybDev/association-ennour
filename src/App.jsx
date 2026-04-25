@@ -105,11 +105,15 @@ const content = {
     manageLabel: "Gérer les activités",
     manageHideLabel: "Fermer la gestion",
     manageSectionTitle: "Modifier les activités",
+    manageGallerySectionTitle: "Modifier la galerie",
     deleteAction: "Supprimer",
+    deleteImageAction: "Supprimer l'image",
     addActivityButton: "Ajouter une activité",
+    addGalleryImageButton: "Ajouter à la galerie",
     titlePlaceholder: "Titre de l'activité",
     textPlaceholder: "Description de l'activité",
     uploadImageLabel: "Image à télécharger",
+    uploadGalleryImageLabel: "Image de la galerie",
     imagePlaceholder: "URL de l'image",
     galleryLabel: "Galerie",
     galleryTitle: "Nos actions en images",
@@ -217,11 +221,15 @@ const content = {
     manageLabel: "إدارة الأنشطة",
     manageHideLabel: "إغلاق الإدارة",
     manageSectionTitle: "تعديل الأنشطة",
+    manageGallerySectionTitle: "تعديل المعرض",
     deleteAction: "حذف",
+    deleteImageAction: "حذف الصورة",
     addActivityButton: "إضافة نشاط",
+    addGalleryImageButton: "إضافة إلى المعرض",
     titlePlaceholder: "عنوان النشاط",
     textPlaceholder: "نص النشاط",
     uploadImageLabel: "تحميل صورة",
+    uploadGalleryImageLabel: "صورة المعرض",
     imagePlaceholder: "رابط الصورة",
     galleryLabel: "المعرض",
     galleryTitle: "صور من أنشطتنا",
@@ -443,8 +451,14 @@ export default function App() {
   const [loginError, setLoginError] = React.useState("");
   const [showManager, setShowManager] = React.useState(false);
   const [uploadedImage, setUploadedImage] = React.useState(null);
+  const [uploadedGalleryImage, setUploadedGalleryImage] = React.useState(null);
   const [activitiesDataState, setActivitiesDataState] = React.useState(activitiesData);
-  const [isLoadingActivities, setIsLoadingActivities] = React.useState(true);
+  const [_isLoadingActivities, setIsLoadingActivities] = React.useState(true);
+  const [galleryImagesState, setGalleryImagesState] = React.useState({
+    fr: galleryImages,
+    ar: galleryImages,
+  });
+  const [_isLoadingGallery, setIsLoadingGallery] = React.useState(true);
 
   const aiApiKey = import.meta.env.VITE_AI_API_KEY;
   const aiBaseUrl = import.meta.env.VITE_AI_BASE_URL || "https://api.openai.com/v1";
@@ -453,6 +467,7 @@ export default function App() {
 
   const t = content[lang];
   const activities = activitiesDataState[lang];
+  const gallery = galleryImagesState[lang] || [];
   const isArabic = lang === "ar";
 
   React.useEffect(() => {
@@ -474,6 +489,11 @@ export default function App() {
 
   React.useEffect(() => {
     const loadActivitiesFromSupabase = async () => {
+      if (!supabase) {
+        setIsLoadingActivities(false);
+        return;
+      }
+
       try {
         setIsLoadingActivities(true);
         const { data, error } = await supabase
@@ -513,6 +533,51 @@ export default function App() {
     };
 
     loadActivitiesFromSupabase();
+  }, []);
+
+  React.useEffect(() => {
+    const loadGalleryFromSupabase = async () => {
+      if (!supabase) {
+        setIsLoadingGallery(false);
+        return;
+      }
+
+      try {
+        setIsLoadingGallery(true);
+        const { data, error } = await supabase
+          .from("gallery")
+          .select("*")
+          .order("created_at", { ascending: false });
+
+        if (error) throw error;
+
+        const grouped = {
+          fr: galleryImages.map((image) => ({ image })),
+          ar: galleryImages.map((image) => ({ image })),
+        };
+
+        if (data && data.length > 0) {
+          data.forEach((item) => {
+            const itemLang = item.lang || "fr";
+            if (!grouped[itemLang]) {
+              grouped[itemLang] = [];
+            }
+            grouped[itemLang].push({
+              image: item.image,
+              id: item.id,
+            });
+          });
+        }
+
+        setGalleryImagesState(grouped);
+      } catch (err) {
+        console.error("Error loading gallery:", err);
+      } finally {
+        setIsLoadingGallery(false);
+      }
+    };
+
+    loadGalleryFromSupabase();
   }, []);
 
   React.useEffect(() => {
@@ -608,6 +673,65 @@ export default function App() {
       setUploadedImage(null);
     } catch (err) {
       console.error("Error adding activity:", err);
+    }
+  };
+
+  const handleGalleryImageUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) {
+      setUploadedGalleryImage(null);
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setUploadedGalleryImage(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleAddGalleryImage = async (e) => {
+    e.preventDefault();
+
+    if (!uploadedGalleryImage) {
+      return;
+    }
+
+    if (!supabase) {
+      setGalleryImagesState((prev) => ({
+        ...prev,
+        [lang]: [...(prev[lang] || []), { image: uploadedGalleryImage }],
+      }));
+      e.target.reset();
+      setUploadedGalleryImage(null);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from("gallery")
+        .insert([
+          {
+            image: uploadedGalleryImage,
+            lang,
+          },
+        ])
+        .select();
+
+      if (error) throw error;
+
+      setGalleryImagesState((prev) => ({
+        ...prev,
+        [lang]: [
+          ...(prev[lang] || []),
+          { image: uploadedGalleryImage, id: data?.[0]?.id },
+        ],
+      }));
+
+      e.target.reset();
+      setUploadedGalleryImage(null);
+    } catch (err) {
+      console.error("Error adding gallery image:", err);
     }
   };
 
@@ -1308,10 +1432,14 @@ export default function App() {
         </div>
 
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {galleryImages.map((image, index) => (
-            <div key={index} className="group relative overflow-hidden rounded-[26px] shadow-lg">
+          {gallery.map((item, index) => {
+            const imageSrc = typeof item === "string" ? item : item.image;
+            const imageId = typeof item === "string" ? null : item.id;
+
+            return (
+            <div key={imageId || `${imageSrc}-${index}`} className="group relative overflow-hidden rounded-[26px] shadow-lg">
               <img
-                src={image}
+                src={imageSrc}
                 alt={`Galerie ${index + 1}`}
                 className="h-56 w-full object-cover transition duration-500 group-hover:scale-110 sm:h-72"
               />
@@ -1320,9 +1448,82 @@ export default function App() {
                 <ImageIconSvg className="h-5 w-5" />
                 <span className="font-medium">{t.galleryCard} {index + 1}</span>
               </div>
+
+              {isLoggedIn && showManager && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!imageId) {
+                      setGalleryImagesState((prev) => ({
+                        ...prev,
+                        [lang]: (prev[lang] || []).filter((_, i) => i !== index),
+                      }));
+                      return;
+                    }
+
+                    if (!supabase) {
+                      setGalleryImagesState((prev) => ({
+                        ...prev,
+                        [lang]: (prev[lang] || []).filter((_, i) => i !== index),
+                      }));
+                      return;
+                    }
+
+                    try {
+                      const { error } = await supabase
+                        .from("gallery")
+                        .delete()
+                        .eq("id", imageId);
+
+                      if (error) throw error;
+
+                      setGalleryImagesState((prev) => ({
+                        ...prev,
+                        [lang]: (prev[lang] || []).filter((img) => {
+                          if (typeof img === "string") return true;
+                          return img.id !== imageId;
+                        }),
+                      }));
+                    } catch (err) {
+                      console.error("Error deleting gallery image:", err);
+                    }
+                  }}
+                  className="absolute right-3 top-3 rounded-lg bg-red-500 px-3 py-1 text-xs font-semibold text-white shadow hover:bg-red-600"
+                >
+                  {t.deleteImageAction || t.deleteAction}
+                </button>
+              )}
             </div>
-          ))}
+          )})}
         </div>
+
+        {isLoggedIn && showManager && (
+          <div className="mt-8 mx-auto max-w-md">
+            <h4 className={isDark ? "text-lg font-bold text-white" : "text-lg font-bold text-slate-900"}>
+              {t.manageGallerySectionTitle || t.manageSectionTitle}
+            </h4>
+            <form onSubmit={handleAddGalleryImage} className="mt-4 space-y-4">
+              <div>
+                <label className={isDark ? "block text-sm font-medium text-slate-200" : "block text-sm font-medium text-slate-700"}>
+                  {t.uploadGalleryImageLabel || t.uploadImageLabel}
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleGalleryImageUpload}
+                  required
+                  className={isDark ? "mt-2 w-full rounded-xl border border-white/10 bg-slate-900 px-3 py-2 text-white" : "mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-900"}
+                />
+              </div>
+              <button
+                type="submit"
+                className="w-full rounded-xl bg-green-500 py-3 text-sm font-semibold text-white transition hover:bg-green-600"
+              >
+                {t.addGalleryImageButton || t.addActivityButton}
+              </button>
+            </form>
+          </div>
+        )}
       </section>
 
       <section id="don" className="scroll-mt-28 bg-gradient-to-r from-green-700 to-green-800 py-12 text-white sm:py-20">
